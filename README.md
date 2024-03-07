@@ -31,3 +31,7 @@ If the request does not comply, the validation fails and the creation of the pod
 | Ease of Installation | Moderate                   | Easy                             | Moderate                         | Easy                                     |
 | Package Management | Not Available                | Not Available                    | Not Available                    | npm                                      |
 
+## OPA Gatekeeper
+Our first deep dive into policy engines will be the most mature and widely spread used OPA Gatekeeper.
+OPA is a general-purpose policy engine that means its capabilities are not limited to a Kubernetes Cluster.
+Some of its use cases include microservice authorization, infrastructure, data source filtering, CI/CD pipeline polices and, of course, Kubernetes admission controller.
