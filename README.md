@@ -98,7 +98,7 @@ This integration is critical for Gatekeeper
 to enforce custom policies on resources as they are created or updated within the Kubernetes cluster.
 Here is a summary on how this process is done:
 * Admission Webhook Registration
-  * When Gatekeeper is installed in a Kubernetes cluster, it registers itself with the API server as an admission webhook.
+  * When Gatekeeper is installed in a Kubernetes cluster, it registers itself with the API server as an [admission webhook](https://open-policy-agent.github.io/gatekeeper/website/docs/operations/#validating-webhook).
     This registration includes specifying the operations (e.g., CREATE, UPDATE), 
     and the types of resources (e.g., Pods, Services) Gatekeeper should intercept.
     This is configured in the webhook configuration object,
@@ -129,10 +129,32 @@ Here is a summary on how this process is done:
     the API server rejects the request and returns the error message from Gatekeeper to the user,
     preventing the resource from being created or updated.
 * Mutating Admission Webhook 
-  * In addition to validating requests, Gatekeeper can also be configured as a mutating admission webhook,
+  * In addition to validating requests, Gatekeeper can also be configured as a [mutating admission webhook](https://open-policy-agent.github.io/gatekeeper/website/docs/operations/#mutating-webhook),
     which allows it
     to modify requests to make them compliant with certain policies before they are processed by the API server. 
     This is a more advanced and less commonly used feature,
     as it requires careful policy design to prevent unintended modifications.
 
 ![gatekeeper-architecture](images/gatekeeper-arch.png)
+
+#### Pros&Cons of Gatekeeper
+* Pros
+  * Fine-Grained Policies
+    * Gatekeeper allows for the definition of fine-grained policies using the Rego language, providing high flexibility and precision in policy enforcement. 
+  * Native Kubernetes Integration 
+    * As a Kubernetes-native solution, Gatekeeper seamlessly integrates with the Kubernetes ecosystem, leveraging existing components like the Admission Controller for policy enforcement. 
+  * Declarative Management 
+    * Policies in Gatekeeper are defined declaratively, which aligns well with Kubernetes overall design philosophy and simplifies the management of policies as code. 
+  * Extensibility 
+    * Through the use of ConstraintTemplates, Gatekeeper offers a highly extensible framework, allowing organizations to define custom policies that cater to their specific requirements. 
+  * Community Support
+    * Being part of the Open Policy Agent (OPA) project, Gatekeeper benefits from strong community support and ongoing development efforts, ensuring that it stays up-to-date with the latest in policy management and Kubernetes security trends. 
+  * Audit Capability 
+    * Gatekeeper provides auditing features, allowing administrators to assess historical compliance and identify resources that violate the defined policies, enhancing security and governance.
+* Cons 
+  * Learning Curve 
+    * The need to learn Rego for policy definition can present a learning curve for users not already familiar with this language, potentially slowing down initial adoption and policy development. 
+  * Maintenance Overhead 
+    * Not only the learning curve can be challenging, and leading to allocation of resources to setup Gatekeeper, its maintenance will also require many team members equipped with Rego knowledge.
+  * Complexity in Policy Management 
+    * While the declarative nature of Gatekeeper's policies is helpful, managing a large number of complex policies can become challenging, requiring careful organization and governance.
