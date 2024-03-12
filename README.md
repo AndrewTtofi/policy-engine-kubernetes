@@ -87,7 +87,7 @@ which leverages JavaScript or TypeScript for policy definition,
 appealing to organizations familiar with these languages.
 
 ### OPA (Open Policy Agent) Gatekeeper
-Our first deep dive into policy engines will be the most mature and widely spread used OPA Gatekeeper.
+Our first deep dive into policy engines will be the most mature and widely spread used, OPA Gatekeeper.
 OPA is a general-purpose policy engine that means its capabilities are not limited to a Kubernetes Cluster.
 Some of its use cases include microservice authorization, infrastructure, data source filtering, CI/CD pipeline polices and, of course, Kubernetes admission controller.
 OPA Gatekeeper, on the other hand, is a specialized project that provides integration between OPA and Kubernetes.
@@ -96,6 +96,7 @@ Gatekeeper integrates with the Kubernetes API server through the dynamic admissi
 specifically by registering itself as a Validating and Mutating Admission Webhook.
 This integration is critical for Gatekeeper
 to enforce custom policies on resources as they are created or updated within the Kubernetes cluster.
+
 Here is a summary on how this process is done:
 * Admission Webhook Registration
   * When Gatekeeper is installed in a Kubernetes cluster, it registers itself with the API server as an [admission webhook](https://open-policy-agent.github.io/gatekeeper/website/docs/operations/#validating-webhook).
@@ -135,7 +136,7 @@ Here is a summary on how this process is done:
     This is a more advanced and less commonly used feature,
     as it requires careful policy design to prevent unintended modifications.
 
-![gatekeeper-architecture](images/gatekeeper-arch.png)
+![gatekeeper-architecture](images/gatekeeper/gatekeeper-arch.png)
 
 #### Pros&Cons of Gatekeeper
 * Pros
@@ -158,3 +159,69 @@ Here is a summary on how this process is done:
     * Not only the learning curve can be challenging, and leading to allocation of resources to setup Gatekeeper, its maintenance will also require many team members equipped with Rego knowledge.
   * Complexity in Policy Management 
     * While the declarative nature of Gatekeeper's policies is helpful, managing a large number of complex policies can become challenging, requiring careful organization and governance.
+
+### Kyverno
+Kyverno is a policy engine designed specifically for Kubernetes, developed by Nirmata.
+It is recognized as an incubating project under the Cloud Native Computing Foundation (CNCF),
+highlighting its growing importance and adoption within the cloud-native ecosystem.
+Kyverno stands out for its Kubernetes-native approach to policy management,
+allowing cluster administrators to define, manage,
+and enforce policies directly on Kubernetes resources without the need to write complex code.
+
+Kyverno [works](https://kyverno.io/docs/introduction/#how-kyverno-works) by integrating directly with the Kubernetes API to apply policies as Kubernetes resources themselves,
+which simplifies the process of policy management in Kubernetes environments.
+Here's an overview of how Kyverno operates within a Kubernetes cluster:
+* Dynamic Admission Control 
+  * Kyverno registers itself as a dynamic admission controller with the Kubernetes API server. 
+    This allows Kyverno to intercept API requests, such as the creation, update, or deletion of Kubernetes resources,
+    before they are processed and persisted in the cluster's etcd database. 
+* Policies as Kubernetes Resources 
+  * Administrators define policies using Kyverno custom resources, such as ClusterPolicy (non-namespaced) and Policy
+    (namespaced). 
+    These policies are written in YAML, similar to other Kubernetes resources,
+    making them accessible to users familiar with Kubernetes. 
+    The policies specify rules that can validate, mutate, or generate Kubernetes resources. 
+  * Validation Rules 
+    * Check the configuration of resources to ensure they meet certain criteria before being allowed in the cluster. 
+      If a resource fails validation, the request is rejected, and an error is returned to the user. 
+  * Mutation Rules 
+    * Automatically modify resources as they are created or updated to ensure they comply with organizational standards or to inject certain configurations automatically. 
+  * Generation Rules
+    * Create additional resources based on the presence or configuration of other resources. 
+      This can be useful for ensuring related resources are always deployed together. 
+* Policy Matching
+  * When Kyverno receives an admission review request from the Kubernetes API server, it evaluates the request against all applicable policies. 
+    Policies can be scoped to apply to specific kinds of resources, namespaces, or even specific resource names, and can use label selectors for finer granularity. 
+* Policy Enforcement 
+  * For each matching policy, Kyverno applies the rules defined within that policy to the resource in the admission review request. 
+  * If a validation rule fails, Kyverno rejects the request and returns an error explaining the violation. 
+  * If a mutation rule applies, Kyverno modifies the resource in the request according to the rule and forwards the modified version to the API server for processing. 
+  * If a generation rule is triggered, Kyverno creates the specified resources automatically. 
+* Reporting and Feedback 
+  * Kyverno generates policy reports that provide feedback on policy violations, mutations, and generated resources. 
+    These reports help administrators understand the impact of policies and identify compliance issues within the cluster.
+![kyverno-architecture](images/kyverno/kyverno-architecture.png)
+#### Pros&Cons of Kyverno
+* Pros
+  * No Additional Language Required
+    * Policies in Kyverno are defined using YAML, which means there's no need to learn a new language for policy creation. 
+      This lowers the barrier to entry for teams already familiar with Kubernetes resources and configurations.
+  * Automated Resource Generation
+    * Kyverno `Generation` property allows for the automatic creation of Kubernetes resources based on policy triggers.
+  * Granular Exemptions 
+    * Kyverno offers detailed controls for exemptions, allowing for precise and flexible policy application tailored to specific needs or exceptions within the Kubernetes environment.
+  * Declarative Policy Management
+    * Kyverno policies are managed as Kubernetes resources, which fits well with the Kubernetes philosophy of declarative configuration. 
+      This approach enables version control of policies alongside your application code, enhancing auditability and governance
+* Cons
+  * Dependent on Kubernetes Versions
+    * Since Kyverno relies on Kubernetes APIs and features, there may be dependencies on specific Kubernetes versions. 
+      This could potentially limit the use of certain Kyverno features based on the Kubernetes version deployed.
+  * The potential for Complex Policies is lower
+    * As with any large system,
+      there's potential to create overly complex policies that are challenging to understand and maintain. 
+      This can lead to challenges in troubleshooting and could increase the risk of misconfigurations.
+      Especially in the case of Kyverno, which it does not use any programming language.
+  * Limited to Kubernetes 
+    * As Kyverno is specifically designed for Kubernetes, its use is limited to environments where Kubernetes is the orchestration tool in use. 
+      This could be a limitation for organizations using multiple or different orchestration systems.
