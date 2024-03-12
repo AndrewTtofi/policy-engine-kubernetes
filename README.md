@@ -200,3 +200,28 @@ Here's an overview of how Kyverno operates within a Kubernetes cluster:
 * Reporting and Feedback 
   * Kyverno generates policy reports that provide feedback on policy violations, mutations, and generated resources. 
     These reports help administrators understand the impact of policies and identify compliance issues within the cluster.
+![kyverno-architecture](images/kyverno/kyverno-architecture.png)
+#### Pros&Cons of Kyverno
+* Pros
+  * No Additional Language Required
+    * Policies in Kyverno are defined using YAML, which means there's no need to learn a new language for policy creation. 
+      This lowers the barrier to entry for teams already familiar with Kubernetes resources and configurations.
+  * Automated Resource Generation
+    * Kyverno `Generation` property allows for the automatic creation of Kubernetes resources based on policy triggers.
+  * Granular Exemptions 
+    * Kyverno offers detailed controls for exemptions, allowing for precise and flexible policy application tailored to specific needs or exceptions within the Kubernetes environment.
+  * Declarative Policy Management
+    * Kyverno policies are managed as Kubernetes resources, which fits well with the Kubernetes philosophy of declarative configuration. 
+      This approach enables version control of policies alongside your application code, enhancing auditability and governance
+* Cons
+  * Dependent on Kubernetes Versions
+    * Since Kyverno relies on Kubernetes APIs and features, there may be dependencies on specific Kubernetes versions. 
+      This could potentially limit the use of certain Kyverno features based on the Kubernetes version deployed.
+  * The potential for Complex Policies is lower
+    * As with any large system,
+      there's potential to create overly complex policies that are challenging to understand and maintain. 
+      This can lead to challenges in troubleshooting and could increase the risk of misconfigurations.
+      Especially in the case of Kyverno, which it does not use any programming language.
+  * Limited to Kubernetes 
+    * As Kyverno is specifically designed for Kubernetes, its use is limited to environments where Kubernetes is the orchestration tool in use. 
+      This could be a limitation for organizations using multiple or different orchestration systems.
