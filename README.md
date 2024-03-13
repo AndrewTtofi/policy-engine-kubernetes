@@ -57,18 +57,18 @@ If the request does not comply, the validation fails and the creation of the pod
 ![policy-validation](images/policy-validation.png)
 
 ## Comparison of Solutions
-| Tool              | OPA Gatekeeper                | Kyverno                          | Kubewarden                      | jsPolicy                                 |
-|-------------------|-------------------------------|----------------------------------|----------------------------------|------------------------------------------|
-| Engine Language   | GO                            | GO                               | GO                               | GO                                       |
-| Admission Controller | Yes                         | Yes                              | Yes                              | Yes                                      |
-| Mutating Webhook  | Yes                           | Yes                              | Yes                              | Yes                                      |
-| Validation Rule Language | Rego                    | YAML/JSON                        | Any compiled to WebAssembly      | JavaScript/TypeScript                    |
-| Support for Custom Resources | Yes                 | Yes                              | Yes                              | Yes                                      |
-| Extensibility     | Highly Extensible             | Highly Extensible                | Highly Extensible                | Limited Extensibility                    |
-| Community         | Large and Active              | Growing                          | Small and Active                 | Small and Active                         |
-| Integration       | Native Integration with Kustomize and Helm | Native Integration with Kustomize and Helm | Native Integration with Open Policy Agent | Native Integration with Kubectl and Kubernetes API |
-| Ease of Installation | Moderate                   | Easy                             | Moderate                         | Easy                                     |
-| Package Management | Not Available                | Not Available                    | Not Available                    | npm                                      |
+| Tool              | OPA Gatekeeper                | Kyverno                          | Kubewarden                  | jsPolicy                                 |
+|-------------------|-------------------------------|----------------------------------|-----------------------------|------------------------------------------|
+| Engine Language   | GO                            | GO                               | GO                          | GO                                       |
+| Admission Controller | Yes                         | Yes                              | Yes                         | Yes                                      |
+| Mutating Webhook  | Yes                           | Yes                              | Yes                         | Yes                                      |
+| Validation Rule Language | Rego                    | YAML/JSON                        | Any compiled to WebAssembly | JavaScript/TypeScript                    |
+| Support for Custom Resources | Yes                 | Yes                              | Yes                         | Yes                                      |
+| Extensibility     | Highly Extensible             | Highly Extensible                | Highly Extensible           | Limited Extensibility                    |
+| Community         | Large and Active              | Growing                          | Small and Active            | Small and Active                         |
+| Integration       | Native Integration with Open Policy Agent | Native Integration with Kustomize and Helm | Helm                        | Native Integration with Kubectl and Kubernetes API |
+| Ease of Installation | Moderate                   | Easy                             | Easy                        | Easy                                     |
+| Package Management | Not Available                | Not Available                    | Not Available               | npm                                      |
 
 
 ## Deep Dive to each solution
@@ -161,7 +161,7 @@ Here is a summary on how this process is done:
     * While the declarative nature of Gatekeeper's policies is helpful, managing a large number of complex policies can become challenging, requiring careful organization and governance.
 
 ### Kyverno
-Kyverno is a policy engine designed specifically for Kubernetes, developed by Nirmata.
+Kyverno is a policy engine designed specifically for Kubernetes, developed by [Nirmata](https://nirmata.com/).
 It is recognized as an incubating project under the Cloud Native Computing Foundation (CNCF),
 highlighting its growing importance and adoption within the cloud-native ecosystem.
 Kyverno stands out for its Kubernetes-native approach to policy management,
@@ -225,3 +225,85 @@ Here's an overview of how Kyverno operates within a Kubernetes cluster:
   * Limited to Kubernetes 
     * As Kyverno is specifically designed for Kubernetes, its use is limited to environments where Kubernetes is the orchestration tool in use. 
       This could be a limitation for organizations using multiple or different orchestration systems.
+
+### Kubewarden
+Third in our comparison list is Kubewarden.
+It is currently a CNCF sandbox project and was originally developed by [Rancher](https://www.rancher.com/about) by SUSE.
+Unlike traditional policy engines that rely on domain-specific languages,
+Kubewarden leverages the flexibility and security of WebAssembly (Wasm) to execute policies,
+allowing developers to write policies in familiar programming languages before compiling them into Wasm modules.
+This approach not only provides flexibility in policy creation, enabling more contributors within an organization,
+but also ensures a high level of isolation and safety due to the sandboxed nature of WebAssembly.
+As a project incubated under the CNCF,
+Kubewarden is set to address the evolving needs of Kubernetes security and configuration management,
+making it a compelling choice for organizations looking to enhance their Kubernetes governance with a modern,
+developer-friendly solution.
+
+How does exactly Kubewarden work?
+* Installation
+  * This is typically done using Helm, which will deploy the Kubewarden components as a set of Kubernetes resources. 
+    These components include the Kubewarden controller and necessary Custom Resource Definitions (CRDs) for policy management.
+* Integration with Admission Controllers 
+  * Kubewarden operates as a dynamic admission controller within Kubernetes. 
+    This means it intercepts API requests to create, update,
+    or delete Kubernetes resources before they are processed by the API server.
+* Policy Evaluation 
+  * For each intercepted request, the Kubewarden controller invokes the relevant Wasm policy modules to evaluate the request. 
+    The policies inspect the request details (such as the resource kind, metadata, and specifications) and determine whether it complies with the defined rules.
+* Admission Decision 
+  * Based on the evaluation, the Wasm modules return a decision to the Kubewarden controller. 
+    If any policy is violated, the controller rejects the request, and it's prevented from proceeding,
+    ensuring that only compliant resources are deployed or modified in the cluster.
+    If the request passes all policy checks, it's allowed to proceed.
+* Policy Development 
+  * Developers or security engineers write policies according to the organization's requirements. 
+    These policies can be about anything
+    that needs to be enforced in the Kubernetes environment like ensuring only images from a trusted registry are used,
+    or that all Pods must have resource limits set.
+    Thanks to Kubewarden flexibility,
+    these policies can be written in languages like Rust, Go,
+    or others that compile to Wasm, and it also supports compatibility to Rego
+    (Gatekeeper).
+* Compilation 
+  * Once the policies are written, they are compiled into WebAssembly (Wasm) modules. 
+    This compilation step transforms the high-level policy code into a binary format
+    that can be executed in a sandboxed environment,
+    providing security and portability.
+* Feedback and Reporting
+  * Kubewarden provides detailed feedback on its policy decisions, which can be used for auditing and compliance purposes. 
+    This feedback includes information on which policies were evaluated, their decisions, and any messages returned by the policies explaining their decisions.
+
+![kubewarden](images/kubewarden/kubwarden-architecture.png)
+
+#### Pros&Cons of Kubewarden
+* Pros
+  * Flexibility in Policy Development 
+    * Kubewarden allows policies to be written in any programming language that compiles to WebAssembly, 
+      offering flexibility and leveraging existing developer skills, 
+      without the need to learn a new domain-specific language.
+  * Strong Isolation with WebAssembly 
+    * Policies are executed in a sandboxed environment provided by WebAssembly, 
+      enhancing security by isolating the policy execution from the Kubernetes cluster
+      and reducing the risk of malicious exploits.
+  * Performance Efficiency 
+    * WebAssembly is designed for high performance and low overhead, 
+      making Kubewarden an efficient solution for policy evaluation, 
+      even in high-load environments.
+  * Cross-Platform Portability
+    * WebAssembly ensures that policies run consistently across different environments and Kubernetes distributions, thanks to its platform-agnostic design.
+  * Community and Ecosystem 
+    * As part of the CNCF sandbox projects, Kubewarden benefits from community contributions, shared knowledge, and a growing ecosystem of integrations and tooling.
+* Cons
+  * Maturity
+    * As a relatively new project, Kubewarden might not have the same level of maturity, 
+      widespread adoption, or extensive documentation as more established Kubernetes policy engines,
+      potentially leading to challenges in troubleshooting and community support.
+  * Tooling and Integration
+    * Given its unique approach using WebAssembly, the ecosystem of tools specifically designed for developing, testing,
+      and debugging Kubewarden policies is still evolving. 
+      This might limit some capabilities compared to more mature solutions with extensive tooling support.
+  * Performance Considerations 
+    * Despite WebAssembly's efficiency, the process of loading and executing Wasm 
+      modules might still introduce latency in the admission control process, 
+      particularly with complex policies or under high loads.
+
