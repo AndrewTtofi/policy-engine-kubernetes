@@ -200,7 +200,9 @@ Here's an overview of how Kyverno operates within a Kubernetes cluster:
 * Reporting and Feedback 
   * Kyverno generates policy reports that provide feedback on policy violations, mutations, and generated resources. 
     These reports help administrators understand the impact of policies and identify compliance issues within the cluster.
+
 ![kyverno-architecture](images/kyverno/kyverno-architecture.png)
+
 #### Pros&Cons of Kyverno
 * Pros
   * No Additional Language Required
@@ -307,3 +309,79 @@ How does exactly Kubewarden work?
       modules might still introduce latency in the admission control process, 
       particularly with complex policies or under high loads.
 
+### JsPolicy
+JsPolicy, developed by Loft Labs, is an open-source policy engine tailored for Kubernetes,
+leveraging the familiar and versatile JavaScript language to define and enforce cluster policies.
+By enabling policies to be scripted in JavaScript, JsPolicy simplifies the policy creation process.
+It makes it accessible to a wider range of developers and administrators
+who can now apply their JavaScript expertise to enhance security and compliance within Kubernetes environments.
+This approach makes policy management easier by lowering the learning curve
+but also harnesses the dynamic capabilities of JavaScript.
+It offers a flexible and user-friendly solution for managing complex Kubernetes policies,
+all while benefiting from the collaborative and transparent nature of its open-source community.
+
+JsPolicy operates through three main parts, Webhook Manager, V8 Javascript Sandbox pool and Policy Compiler.
+A breakdown of what actually happens on each one of them:
+* Webhook Manager
+   It registers with the Kubernetes API server as a dynamic admission webhook,
+   which allows it to intercept requests to the API server,
+   such as creating, updating, or deleting Kubernetes resources.
+   When a request is intercepted,
+   the webhook manager examines the request
+   and determines
+   which JsPolicy policies are applicable based on the type of resource and the operation being performed.
+   The webhook manager then forwards the request to the appropriate JavaScript policy for evaluation,
+   waiting for the policy's decision on whether to allow, deny, or mutate the request. 
+* V8 JavaScript Sandbox Pool
+  * For executing JavaScript policies, JsPolicy uses the V8 JavaScript engine,
+    which is known for its performance.
+    Each JavaScript policy runs inside its own isolated sandbox environment provided by the V8 engine.
+    This sandbox is essential for security,
+    ensuring that policy code execution is isolated from the host environment and from other policies,
+    preventing any malicious code within a policy from affecting the Kubernetes cluster or the JsPolicy system itself.
+    The sandbox pool refers to the collection of these isolated environments,
+    where multiple policies can be executed concurrently in their sandboxes, ensuring efficiency and scalability.
+* Policy Compiler
+  * The policy compiler is responsible
+    for transforming the JavaScript policy code written by developers into an optimized form
+    that can be executed by the V8 engine within the sandbox environments.
+    This compilation process includes parsing the JavaScript code, performing various optimizations,
+    and compiling it into a lower-level representation that the V8 engine can execute more efficiently.
+    The policy compiler ensures
+    that the JavaScript policies are ready
+    to be evaluated quickly and efficiently each time a relevant Kubernetes API request is intercepted,
+    minimizing the performance impact on the cluster.
+
+So the workflow looks like this:
+* A request is made to the Kubernetes API (e.g., to create a Pod).
+* The webhook manager intercepts this request as part of the dynamic admission control process.
+* The webhook manager identifies which JsPolicy policies apply to this request.
+* The applicable JavaScript policies are then invoked within their isolated V8 sandboxes for evaluation.
+* Each policy evaluates the request, making decisions based on the policy logic written in JavaScript.
+* Decisions to allow, deny, or mutate the request are collected and acted upon. If any policy denies the request, it is rejected. Mutation policies can alter the request before it proceeds.
+* The Kubernetes API server completes the request based on the policies' decisions, enforcing the organization's rules and standards. 
+
+![jspolicy-architecture](images/jspolicy/jspolicy-architecture.png)
+
+#### Pros&Cons of JsPolicy
+* Pros
+  * Familiarity of JavaScript
+    * By using JavaScript, JsPolicy allows more team members to contribute without the need to learn a new language.
+  * Dynamic and Flexible Scripting 
+    * JavaScript enables complex logic and flexibility in policy definitions, allowing for sophisticated control over Kubernetes resources and operations. 
+  * Fast Execution with V8 Engine
+    * JsPolicy uses the V8 JavaScript engine, known for its high performance, ensuring policies are evaluated quickly and efficiently, minimizing the impact on cluster operations. 
+  * Secure Sandbox Execution 
+    * Policies are executed in isolated sandbox environments, enhancing security by preventing malicious or buggy code from affecting the Kubernetes cluster or the host system. 
+  * Ease of Integration
+    * Being Kubernetes-native and leveraging CRDs (Custom Resource Definitions) for policy management, JsPolicy integrates seamlessly with Kubernetes ecosystems, fitting well into existing workflows.
+* Cons 
+  * Performance Overhead
+    * While the V8 engine is fast, running JavaScript policies for every admission request can introduce latency, especially in high-load environments or with complex policies, potentially affecting cluster performance. 
+  * JavaScript Limitations
+    * The dynamic nature of JavaScript, while flexible, can also lead to runtime errors and harder-to-debug issues compared to statically typed languages, potentially increasing the maintenance burden for complex policies.
+  * Maturity and Ecosystem 
+    * As a newer policy controller into the Kubernetes policy space, JsPolicy's ecosystem, community support, and available integrations may not be as mature or extensive as more established policy engines.
+      This also extends to its documentation and usage.
+
+## Final Thoughts
